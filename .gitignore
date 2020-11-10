@@ -1,0 +1,8 @@
+venv
+config.py
+*.pyc
+*.db
+.idea/
+cookies
+test.py
+
