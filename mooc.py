@@ -5,7 +5,6 @@ import requests
 from io import BytesIO
 from PIL import Image
 import time
-import sys
 
 username = ''  # 用户名
 password = ''  # 密码
