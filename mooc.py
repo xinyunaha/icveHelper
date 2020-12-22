@@ -1,5 +1,6 @@
 # Version 1.0
 # Created by xinyunaha on 2020-12-21 15:21
+import random
 
 import requests
 from io import BytesIO
@@ -35,8 +36,6 @@ class Mooc:
     def Main(self):
         if type(self.loginStatus) == str:
             exit()
-        # print(self.getCellList('yai8axas4qlkuj0sajxs7g', '9am8axasp6zpyqzyq8hasq'))
-        print(self.courseId)
         self.Start()
 
     def login(self):
@@ -60,7 +59,11 @@ class Mooc:
 
     def getUserInfo(self):
         res = self.session.get(Mooc.URL_USER_INFO, headers=headers).json()
-        print('欢迎您:', res['displayName'])
+        try:
+            print('欢迎您:', res['displayName'])
+        except:
+            print(res['msg'])
+            exit(-1)
         return res['id']
 
     def choseCourse(self):
@@ -158,7 +161,9 @@ class Mooc:
                                     _viewType = '888' if data['IsAllowDownLoad'] else '1229'
                                     process = self.studyProcess(moduleID, cellID, _time, _time, _viewType)
                                     print('......成功' if process else '......失败')
-                                    print(20)
+                                    _time = random.randint(20, 40)
+                                    print(f'将在{_time}s后进行下一小节的观看')
+                                    time.sleep(_time)
             pass
 
 
