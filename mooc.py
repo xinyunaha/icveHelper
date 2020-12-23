@@ -10,6 +10,9 @@ import time
 username = ''  # 用户名
 password = ''  # 密码
 
+minTime = 20  # 观看完一个小节的最小等待时间(单位：秒) 最低5,推荐20以上
+maxTime = 40  # 观看完一个小节的最大等待时间(单位：秒) 推荐8,推荐30以上
+
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,like Gecko) '
                          'Chrome/86.0.4240.75 Safari/537.36'}
 
@@ -39,6 +42,9 @@ class Mooc:
         self.Start()
 
     def login(self):
+        if password == '' or password == '':
+            print('请补全用户名及密码')
+            exit(-1)
         codeContent = self.session.get(
             f'{Mooc.URL_LOGIN_VERIFY}?ts={round(time.time() * 1000)}',
             headers=headers).content
@@ -153,16 +159,18 @@ class Mooc:
                                 cellStatus = childItem['isStudyFinish']
                                 cellType = childItem['cellType']
                                 print(f'\t\t当前小节:{cellName}', end='')
-                                if cellStatus or cellType == 5:
-                                    print('......已跳过')
+                                if cellStatus:
+                                    print('......已完成,跳过')
+                                elif cellType == 5:
+                                    print('......暂不支持自动答题,跳过')
+                                    print(cellID,moduleID)
                                 else:
                                     data = self.studyView(cellID, moduleID)
                                     _time = data['VideoTimeLong']
                                     _viewType = '888' if data['IsAllowDownLoad'] else '1229'
                                     process = self.studyProcess(moduleID, cellID, _time, _time, _viewType)
-                                    print('......成功' if process else '......失败')
-                                    _time = random.randint(20, 40)
-                                    print(f'将在{_time}s后进行下一小节的观看')
+                                    _time = random.randint(minTime, maxTime)
+                                    print(f'......成功 将在{_time}s后进行下一小节的观看' if process else '......失败')
                                     time.sleep(_time)
             pass
 
