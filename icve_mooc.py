@@ -163,7 +163,6 @@ class Mooc:
                                     print('......已完成,跳过')
                                 elif cellType == 5:
                                     print('......暂不支持自动答题,跳过')
-                                    print(cellID,moduleID)
                                 else:
                                     data = self.studyView(cellID, moduleID)
                                     _time = data['VideoTimeLong']
