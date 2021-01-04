@@ -12,8 +12,6 @@ import requests
 # author: xinyunaha
 # date: 2020.10.24 18:26
 
-username = ''  # 用户名
-password = ''  # 密码
 minTime = 5  # 观看完一个小节的最小等待时间(单位：秒) 最低5,推荐20以上
 maxTime = 8  # 观看完一个小节的最大等待时间(单位：秒) 最低8,推荐30以上
 
@@ -23,17 +21,14 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 
 class Mooc:
     def __init__(self):
-        if password == '' or password == '':
-            print('请补全用户名及密码')
-            exit(-1)
+        self.username = input("请输入您的账号:")
+        self.password = input("请输入您的密码:")
         self.verifyCode = None
         self.userid = None
         self.courseId = None
         self.cellId = None
         self.notWatched = {}
         self.session = requests.session()
-        self.username = username
-        self.password = password
         self.verify()
         self.login()
         self.getUserInfo()
