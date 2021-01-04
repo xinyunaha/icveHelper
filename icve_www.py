@@ -8,7 +8,7 @@ import sys
 import math
 import requests
 
-# version 1.0
+# version 1.1
 # author: xinyunaha
 # date: 2020.10.24 18:26
 
