@@ -14,12 +14,18 @@ import requests
 
 username = ''  # 用户名
 password = ''  # 密码
+minTime = 5  # 观看完一个小节的最小等待时间(单位：秒) 最低5,推荐20以上
+maxTime = 8  # 观看完一个小节的最大等待时间(单位：秒) 最低8,推荐30以上
+
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,like Gecko) '
                          'Chrome/86.0.4240.75 Safari/537.36'}
 
 
 class Mooc:
     def __init__(self):
+        if password == '' or password == '':
+            print('请补全用户名及密码')
+            exit(-1)
         self.verifyCode = None
         self.userid = None
         self.courseId = None
@@ -68,7 +74,9 @@ class Mooc:
                 Score = json.loads(res2)['list'][i2].get('Score')
                 Id = json.loads(res2)['list'][i2].get('Id')
                 CountLength = json.loads(res2)['list'][i2].get('CountLength')
-                if Status != 1 or int(Score.replace('%')) != 100:
+                if CountLength == '0':
+                    pass
+                elif Status != 1 or int(Score.replace('%')) != 100:
                     self.notWatched[Id] = toSec(CountLength)
 
     def getUserInfo(self):
@@ -100,51 +108,69 @@ class Mooc:
         _json = json.loads(res)
         for i1 in range(len(_json['directory'])):
             for i2 in range(len(_json['directory'][i1].get('chapters'))):
-                for i3 in range(len(_json['directory'][i1].get('chapters')[i2].get('knowleges'))):
-                    for i4 in range(len(_json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells"))):
-                        type = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
-                            "CellType")
-                        id = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get("Id")
-                        title = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
-                            "Title")
-                        status = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
-                            "Status")
+                if len(_json['directory'][i1].get('chapters')[i2].get('knowleges')) > 0:
+                    for i3 in range(len(_json['directory'][i1].get('chapters')[i2].get('knowleges'))):
+                        for i4 in range(len(_json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells"))):
+                            type = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
+                                "CellType")
+                            id = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get("Id")
+                            title = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
+                                "Title")
+                            status = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
+                                "Status")
 
-                        if _json['directory'][i1].get('chapters')[i2].get('knowleges')[i3].get('cells')[i4].get(
-                                'Status') == 1:
-                            print(f'已完成-跳过 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
-                        else:
-                            if type == 'video' and status != 1:
-                                print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
-                                self.view(id, True)
-                            elif type == 'audio' and status != 1:
-                                print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
-                                self.view(id, False)
-                            elif type == 'ppt' and status != 1:
-                                self.view(id, False)
-                            elif type == 'question' and status != 1:
-                                print(f'新事件-答题 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
-                                self.answer(id)
+                            if _json['directory'][i1].get('chapters')[i2].get('knowleges')[i3].get('cells')[i4].get(
+                                    'Status') == 1:
+                                print(f'已完成-跳过 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                            else:
+                                if type == 'video' and status != 1:
+                                    print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                                    self.view(id, True)
+                                elif type == 'audio' and status != 1:
+                                    print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                                    self.view(id, False)
+                                elif type == 'ppt' and status != 1:
+                                    self.view(id, False)
+                                elif type == 'question' and status != 1:
+                                    print(f'新事件-答题 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                                    self.answer(id)
+                else:
+                    for i3 in _json['directory'][i1].get('chapters')[i2].get('cells'):
+                        _title = i3['Title']
+                        _id = i3['Id']
+                        _status = i3['Status']
+                        _type = i3['ResType']
+                        if _type == 1:
+                            if _status != 1:
+                                print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-{_title}')
+                                self.view(_id, True)
+                            else:
+                                print(f'已完成-跳过 第{i1 + 1}模块-第{i2 + 1}单元-{_title}')
+        print('刷完啦,觉得好用的话就给个Star吧~')
 
     def view(self, cellId, timeStatus):
         data = {'cellId': cellId, 'courseId': self.courseId, 'enterType': 'study'}
-        res = self.session.post('https://www.icve.com.cn/study/directory/view', headers=headers, data=data).text
+        res = self.session.post('https://www.icve.com.cn/study/directory/view', headers=headers, data=data).json()
         if timeStatus:
             self.updateStatus(cellId)
         else:
-            sleepTime = random.randrange(30, 60)
-            print(f'\t观看成功 等待 {sleepTime}s 后继续')
+            sleepTime = random.randrange(minTime, maxTime)
+            print('\t {} 等待 {}s 后继续'.format(res['msg'], sleepTime))
             time.sleep(sleepTime)
 
     def updateStatus(self, cellId):
-        sleepTime = random.randrange(30, 60)
-        data = {'cellId': cellId, 'learntime': self.notWatched[cellId], 'status': 1}
+        sleepTime = random.randrange(minTime, maxTime)
+        try:
+            t = self.notWatched[cellId]
+        except:
+            t = random.randint(300, 600)
+        data = {'cellId': cellId, 'learntime': t, 'status': 1}
         res = self.session.post('https://www.icve.com.cn/study/directory/updateStatus', data=data,
                                 headers=headers).text
         if json.loads(res)['code'] != 1:
             print('添加时长失败')
         else:
-            print(f'\t观看成功 等待 {sleepTime}s 后继续')
+            print('\t {} 等待 {}s 后继续'.format(json.loads(res)['msg'],sleepTime))
             time.sleep(sleepTime)
 
     def answer(self, cellId):
@@ -181,20 +207,26 @@ def toSec(text):
     _text = text
     _time = 0
     if len(_text.split('小时')) != 1:
-        _time += int(_text.split('小时')[0]) * 60 * 60
-        _text = text.split('小时')[1]
-        _time += int(_text.split('分钟')[0]) * 60
-        _text = _text.split('分钟')[1]
-        _time += int(_text.split('秒')[0])
-        _text = _text.split('秒')[1]
+        try:
+            _time += int(_text.split('小时')[0]) * 60 * 60
+            _text = text.split('小时')[1]
+            _time += int(_text.split('分钟')[0]) * 60
+            _text = _text.split('分钟')[1]
+            _time += int(_text.split('秒')[0])
+            _text = _text.split('秒')[1]
+        except:pass
     elif len(text.split('分钟')) != 1:
-        _time += int(_text.split('分钟')[0]) * 60
-        _text = _text.split('分钟')[1]
-        _time += int(_text.split('秒')[0])
-        _text = _text.split('秒')[1]
+        try:
+            _time += int(_text.split('分钟')[0]) * 60
+            _text = _text.split('分钟')[1]
+            _time += int(_text.split('秒')[0])
+            _text = _text.split('秒')[1]
+        except:pass
     else:
-        _time += int(_text.split('秒')[0])
-        _text = _text.split('秒')[1]
+        try:
+            _time += int(_text.split('秒')[0])
+            _text = _text.split('秒')[1]
+        except:pass
     return _time
 
 
