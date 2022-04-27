@@ -85,13 +85,22 @@ class Mooc:
         res = self.session.post("https://www.icve.com.cn/studycenter/MyCourse/studingCourse", headers=headers,
                                 data=data).text
         print('=========================')
-        for i in range(len(json.loads(res)['list'])):
+        self.classnum=len(json.loads(res)['list'])
+        self.allclass=json.loads(res)['list']
+        print("\t-1、自动刷全部课程")
+        for i in range(self.classnum):
             print(f'\t{i}、', json.loads(res)['list'][i].get('title'))
         while True:
             num = input('选择您的课程:')
             try:
-                self.courseId = json.loads(res)['list'][int(num)].get('id')
-                break
+                if int(num)==-1:
+                    self.finishAll=True;
+                    self.courseId = json.loads(res)['list'][0].get('id')
+                    break
+                else:
+                    self.finishAll = False;
+                    self.courseId = json.loads(res)['list'][int(num)].get('id')
+                    break
             except:
                 print('输入错误')
 
@@ -104,6 +113,7 @@ class Mooc:
         for i1 in range(len(_json['directory'])):
             for i2 in range(len(_json['directory'][i1].get('chapters'))):
                 if len(_json['directory'][i1].get('chapters')[i2].get('knowleges')) > 0:
+
                     for i3 in range(len(_json['directory'][i1].get('chapters')[i2].get('knowleges'))):
                         for i4 in range(len(_json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells"))):
                             type = _json["directory"][i1].get("chapters")[i2].get("knowleges")[i3].get("cells")[i4].get(
@@ -119,40 +129,58 @@ class Mooc:
                                 print(f'已完成-跳过 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
                             else:
                                 if type == 'video' and status != 1:
-                                    print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                                    print(f'新事件-观看视频 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
                                     self.view(id, True)
                                 elif type == 'audio' and status != 1:
-                                    print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                                    print(f'新事件-观看音频 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
                                     self.view(id, False)
                                 elif type == 'ppt' and status != 1:
+                                    print(f'新事件-观看ppt 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
                                     self.view(id, False)
                                 elif type == 'question' and status != 1:
                                     print(f'新事件-答题 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
                                     self.answer(id)
-                else:
+                                elif type=='text'and status != 1:
+                                    print(f'新事件-观看文件 第{i1 + 1}模块-第{i2 + 1}单元-第{i3 + 1}讲-{title}')
+                                    self.view(id, False)
+                if len(_json['directory'][i1].get('chapters')[i2].get('cells'))>0:
                     for i3 in _json['directory'][i1].get('chapters')[i2].get('cells'):
                         _title = i3['Title']
                         _id = i3['Id']
                         _status = i3['Status']
-                        _type = i3['ResType']
-                        if _type == 1:
-                            if _status != 1:
+                        _type = i3['ResType'] #1是视频，2是，，，，，4是ppt text image
+                        if _status !=1:
+                            if _type == 1:
+
                                 print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-{_title}')
                                 self.view(_id, True)
-                            else:
-                                print(f'已完成-跳过 第{i1 + 1}模块-第{i2 + 1}单元-{_title}')
+
+                            elif _type == 4 :
+                                print(f'新事件-观看 第{i1 + 1}模块-第{i2 + 1}单元-{_title}')
+                                self.view(_id, False)
+                        else: #已完成
+                            print(f'已完成-跳过 第{i1 + 1}模块-第{i2 + 1}单元-{_title}')
+
         print('刷完啦,觉得好用的话就给个Star吧~')
 
     def view(self, cellId, timeStatus):
         data = {'cellId': cellId, 'courseId': self.courseId, 'enterType': 'study'}
-        res = self.session.post('https://www.icve.com.cn/study/directory/view', headers=headers, data=data).json()
+        try:
+            res = self.session.post('https://www.icve.com.cn/study/directory/view', headers=headers, data=data).json()
+        except:
+            res= self.session.post('https://www.icve.com.cn/study/directory/view', headers=headers, data=data)
+            print("遇到错误",res)
         if timeStatus:
             self.updateStatus(cellId)
         else:
             sleepTime = random.randrange(minTime, maxTime)
-            print('\t {} 等待 {}s 后继续'.format(res['msg'], sleepTime))
-            time.sleep(sleepTime)
+            try:
+                print('\t {} 等待 {}s 后继续'.format(res['msg'], sleepTime))
+                time.sleep(sleepTime)
+            except:
 
+                print('\t {} 等待 {}s 后继续'.format(res['cell']['Title'], sleepTime))
+                time.sleep(sleepTime)
     def updateStatus(self, cellId):
         sleepTime = random.randrange(minTime, maxTime)
         try:
@@ -165,8 +193,12 @@ class Mooc:
         if json.loads(res)['code'] != 1:
             print('添加时长失败')
         else:
-            print('\t {} 等待 {}s 后继续'.format(json.loads(res)['msg'],sleepTime))
-            time.sleep(sleepTime)
+            try:
+                print('\t {} 等待 {}s 后继续'.format(json.loads(res)['msg'],sleepTime))
+                time.sleep(sleepTime)
+            except:
+                print('\t {} 等待 {}s 后继续'.format(res['cell']['Title'], sleepTime))
+                time.sleep(sleepTime)
 
     def answer(self, cellId):
         data1 = {'cellId': cellId, 'courseId': self.courseId, 'enterType': 'study'}
@@ -226,4 +258,10 @@ def toSec(text):
 
 
 if __name__ == "__main__":
-    Mooc()
+    a=Mooc()
+    if a.finishAll :
+        for i in range(1,a.classnum):
+            print("正在进行",i,a.allclass[i].get('title'))
+            a.courseId = a.allclass[i].get('id')
+            a.getWatchTime()
+            a.Run()
